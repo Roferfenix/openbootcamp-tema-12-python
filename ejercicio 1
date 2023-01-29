@@ -1,0 +1,51 @@
+# archivo models.py
+from django.db import models
+
+class Director(models.Model):
+    name = models.CharField(max_length=100)
+
+class Movie(models.Model):
+    director = models.ForeignKey(Director, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+
+# archivo admin.py
+from django.contrib import admin
+from .models import Director, Movie
+
+class MovieInline(admin.StackedInline):
+    model = Movie
+    extra = 1
+
+class DirectorAdmin(admin.ModelAdmin):
+    inlines = [MovieInline]
+
+admin.site.register(Director, DirectorAdmin)
+admin.site.register(Movie)
+
+# archivo views.py
+from django.shortcuts import render
+from .models import Director, Movie
+
+def directors_list(request):
+    directors = Director.objects.all()
+    return render(request, 'directors_list.html', {'directors': directors})
+
+def director_detail(request, director_id):
+    director = Director.objects.get(id=director_id)
+    movies = director.movie_set.all()
+    return render(request, 'director_detail.html', {'director': director, 'movies': movies})
+
+def movie_detail(request, movie_id):
+    movie = Movie.objects.get(id=movie_id)
+    return render(request, 'movie_detail.html', {'movie': movie})
+
+# archivo urls.py
+from django.urls import path
+from .views import directors_list, director_detail, movie_detail
+
+urlpatterns = [
+    path('directors/', directors_list, name='directors_list'),
+    path('directors/<int:director_id>/', director_detail, name='director_detail'),
+    path('movies/<int:movie_id>/', movie_detail, name='movie_detail'),
+]
